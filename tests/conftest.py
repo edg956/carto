@@ -2,7 +2,7 @@ import pytest
 
 from app import setup
 from config import settings
-from geoapp import db
+from geoapp.db import database as db
 
 
 @pytest.fixture(scope="session")
@@ -15,4 +15,3 @@ def database():
 
     finally:
         db.teardown()
-        db.destroy(settings.db_config)

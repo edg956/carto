@@ -1,3 +1,4 @@
+import abc
 import logging
 import typing as T
 
@@ -5,53 +6,12 @@ import psycopg2
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT, ISOLATION_LEVEL_READ_COMMITTED
 from pydantic import BaseModel
 
-from config.config import Config, DatabaseConfig
+from config.config import Config, DatabaseConfig, settings
 
 logger = logging.getLogger(__name__)
 
 
 PsycopgConnection = T.Type[T.Any]
-
-
-class Database(BaseModel):
-    config: T.Optional[DatabaseConfig]
-    conn: T.Optional[PsycopgConnection]
-    initialized: bool = False
-
-    @property
-    def name(self):
-        if not self.config:
-            return 'Unknown'
-
-        return self.config.database
-
-    @property
-    def connection(self) -> PsycopgConnection:
-        if not self.initialized:
-            raise DatabaseNotInitialized
-        return self.conn
-
-    def shutdown(self):
-        if self.initialized:
-            self.conn.close()
-
-    def set_autocommit(self, autocommit: bool):
-        self.connection.commit()
-        self.connection.autocommit = autocommit
-
-    def init(self, config: Config):
-        connection = init_conn(config)
-
-        if self.initialized:
-            self.conn.close()
-
-        self.conn = connection
-        self.config = config
-
-        self.initialized = True
-
-
-database = Database()
 
 
 class DatabaseError(Exception):
@@ -66,64 +26,185 @@ class DatabaseNotInitialized(DatabaseError):
     pass
 
 
-def init_conn(config: DatabaseConfig) -> PsycopgConnection:
-    logger.info("Initializing to database")
-
-    create_database_if_not_exists(config)
-
-    conn = psycopg2.connect(
-        host=config.host,
-        port=config.port,
-        user=config.user,
-        database=config.database,
-        password=config.password
-    )
-
-    if not conn:
-        raise DatabaseInitializationError
-
-    conn.set_isolation_level(ISOLATION_LEVEL_READ_COMMITTED)
-
-    return conn
+class InvalidDatabaseClass(Exception):
+    pass
 
 
-def create_database_if_not_exists(config: DatabaseConfig):
-    logger.info("Initializing to database")
+class Database(abc.ABC):
+    def __init__(self, config: DatabaseConfig = None):
+        self.config: config
 
-    conn = psycopg2.connect(
-        host=config.host,
-        port=config.port,
-        user=config.user,
-        password=config.password
-    )
+        if config:
+            self.init(config)
 
-    if not conn:
-        raise DatabaseInitializationError
+    @property
+    def name(self) -> str:
+        if not self.config:
+            return 'Unknown'
 
-    conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+        return self.config.database
 
-    with conn.cursor() as cur:
-        cur.execute("SELECT 1 FROM pg_database WHERE datname=%s;", (config.database,))
-        exists = bool(cur.fetchone())
+    @abc.abstractmethod
+    def execute_query(self, query: str, params: str) -> T.List:
+        raise NotImplementedError
 
-        if not exists:
-            cur.execute(f"CREATE DATABASE {config.database};")
+    @abc.abstractmethod
+    def execute_statement(self, query: str) -> T.List:
+        raise NotImplementedError
 
-    conn.commit()
-    conn.close()
+    @abc.abstractmethod
+    def shutdown(self):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def init(self, config: Config):
+        pass
+
+    @abc.abstractmethod
+    def atomic(self, effect: str = 'commit'):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def destroy(self):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def create_database_if_not_exists(self):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def teardown(self):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def destroy(self):
+        raise NotImplementedError
+
+
+
+class PostgresDatabase(Database):
+    def __init__(self, config: DatabaseConfig = None):
+        self._conn: T.Optional[PsycopgConnection] = None
+        super().__init__(config)
+
+    def shutdown(self):
+        self._conn.rollback()
+        self._conn.close()
+
+    def _set_autocommit(self, autocommit: bool):
+        self._conn.commit()
+        self._conn.autocommit = autocommit
+
+    def init(self, config: Config):
+        if self._conn:
+            self._conn.close()
+
+        self.config = config
+        self._conn = self._init_conn()
+
+    def atomic(self, effect: str = 'commit'):
+        class atomic:
+            def __enter__(self_):
+                self_._old_state = self._conn.autocommit
+                self._set_autocommit(False)
+
+            def __exit__(self_, *args, **kwargs):
+                self._set_autocommit(self_._old_state)
+                assert effect in ['commit', 'rollback'], f"Effect must be either `commit` or `rollback`. Got `{effect}`"
+                getattr(self._conn, effect)()
+        
+        return atomic()
+
+    def execute_query(self, query: str, params: T.Tuple = None) -> T.List[T.Tuple]:
+        with self._conn.cursor() as cursor:
+            cursor.execute(query, params)
+            return cursor.fetchall()
+
+    def execute_statement(self, query: str) -> T.List:
+        with self._conn.cursor() as cursor:
+            cursor.execute(query)
+
+    def _init_conn(self) -> PsycopgConnection:
+        logger.info("Initializing to database")
+
+        self.create_database_if_not_exists()
+
+        conn = psycopg2.connect(
+            host=self.config.host,
+            port=self.config.port,
+            user=self.config.user,
+            database=self.config.database,
+            password=self.config.password
+        )
+
+        if not conn:
+            raise DatabaseInitializationError
+
+        conn.set_isolation_level(ISOLATION_LEVEL_READ_COMMITTED)
+
+        return conn
+
+    def create_database_if_not_exists(self):
+        logger.info("Initializing to database")
+
+        conn = psycopg2.connect(
+            host=self.config.host,
+            port=self.config.port,
+            user=self.config.user,
+            password=self.config.password
+        )
+
+        if not conn:
+            raise DatabaseInitializationError
+
+        conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+
+        with conn.cursor() as cur:
+            cur.execute("SELECT 1 FROM pg_database WHERE datname=%s;", (self.config.database,))
+            exists = bool(cur.fetchone())
+
+            if not exists:
+                cur.execute(f"CREATE DATABASE {self.config.database};")
+
+        conn.commit()
+        conn.close()
+
+    def teardown(self):
+        self.shutdown()
+        self.destroy()
+
+    def destroy(self):
+        conn = psycopg2.connect(
+            host=self.config.host,
+            port=self.config.port,
+            user=self.config.user,
+            password=self.config.password
+        )
+
+        if not conn:
+            raise DatabaseInitializationError
+
+        conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+
+        with conn.cursor() as cur:
+            cur.execute("SELECT 1 FROM pg_database WHERE datname=%s;", (self.config.database,))
+            exists = bool(cur.fetchone())
+
+            if exists:
+                cur.execute(f"DROP DATABASE {self.config.database};")
+
+        conn.commit()
+        conn.close()
 
 
 def init_tables(database: Database):
-    conn = database.connection
-
     logger.info("Loading SQL Script")
 
     with open('config/db.sql', 'r') as f:
         sql = f.read()
 
     logger.info("Initializing Database")
-    with conn.cursor() as cur:
-        cur.execute(sql)
+    database.execute_statement(sql)
 
 
 def init(config: DatabaseConfig) -> Database:
@@ -134,30 +215,8 @@ def init(config: DatabaseConfig) -> Database:
     init_tables(database)
 
 
-def teardown():
-    global database
-    database.shutdown()
+if settings.db_config.database_class not in locals():
+    raise InvalidDatabaseClass(f"Database class {settings.db_config.database_class} not found")
 
-
-def destroy(config: DatabaseConfig):
-    conn = psycopg2.connect(
-        host=config.host,
-        port=config.port,
-        user=config.user,
-        password=config.password
-    )
-
-    if not conn:
-        raise DatabaseInitializationError
-
-    conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
-
-    with conn.cursor() as cur:
-        cur.execute("SELECT 1 FROM pg_database WHERE datname=%s;", (config.database,))
-        exists = bool(cur.fetchone())
-
-        if not exists:
-            cur.execute(f"DROP DATABASE {config.database};")
-
-    conn.commit()
-    conn.close()
+database_class = locals().get(settings.db_config.database_class)
+database = database_class()

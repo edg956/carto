@@ -1,4 +1,5 @@
 db_config:
+  database_class: PostgresDatabase
   host: localhost
   database: carto
   user: carto

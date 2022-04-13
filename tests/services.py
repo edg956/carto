@@ -16,11 +16,9 @@ class TestMapService:
     def service(self, database):
         service = services.PostgresQueryService()
 
-        service.db.set_autocommit(False)
+        with service.db.atomic(effect='rollback'):
 
-        yield service
-
-        service.conn.rollback()
+            yield service
 
 
     @pytest.fixture()

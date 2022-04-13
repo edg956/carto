@@ -10,6 +10,7 @@ class DatabaseConfig(BaseModel):
     database: Optional[str]
     user: str
     password: str
+    database_class: str
 
 
 class Config(BaseModel):
