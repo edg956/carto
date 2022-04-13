@@ -1,0 +1,5 @@
+db_config:
+  host: localhost
+  database: carto
+  user: carto
+  password: password
