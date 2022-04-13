@@ -60,15 +60,19 @@ class PostgresQueryService(AbstractQueryService):
     def get_map(self, start_date: date, end_date: date) -> dict:
         with self.conn.cursor() as cur:
             cur.execute("SELECT 1")
+            return cur.fetchone()
 
     def get_turnover(self, start_date: date, end_date: date) -> dict:
         with self.conn.cursor() as cur:
             cur.execute("SELECT 1")
+            return cur.fetchone()
 
     def get_turnover_by_age_and_gender(self, start_date: date, end_date: date) -> dict:
         with self.conn.cursor() as cur:
             cur.execute("SELECT 1")
+            return cur.fetchone()
 
     def get_turnover_by_time_and_gender(self, start_date: date, end_date: date) -> dict:
         with self.conn.cursor() as cur:
             cur.execute("SELECT 1")
+            return cur.fetchone()
