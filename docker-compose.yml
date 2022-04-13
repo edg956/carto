@@ -13,11 +13,13 @@ services:
     
   db:
     image: postgis/postgis:10-2.5-alpine
-    env:
+    environment:
       POSTGRES_DB: carto
       POSTGRES_USER: carto
       POSTGRES_PASSWORD: password
       PGDATA: /var/lib/postgresql/data/PGDATA
+    ports:
+      - 5432:5432
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
