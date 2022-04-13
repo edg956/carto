@@ -14,9 +14,32 @@ def date_range():
 class TestMapService:
     @pytest.fixture(scope="class")
     def service(self, database):
-        service = services.PostgresQueryService()
+        service = services.PostgresQueryService(database)
 
-        with service.db.atomic(effect='rollback'):
+        with database.atomic(effect='rollback'):
+            database.execute_statement(
+                query=(
+                    "INSERT INTO PostalCodes (the_geom, code, id) VALUES "
+                    f"{','.join(['(%s, %s, %s)'] * 2)}"
+                ),
+                params=(
+                    "dummy-geom", 28668, 6179,
+                    "other-geom", 28932, 6061
+                ),
+            )
+            database.execute_statement(
+                query=(
+                    "INSERT INTO Payments (amount, p_month, p_age, p_gender, postal_code_id, id) VALUES "
+                    f"{','.join(['(%s, %s, %s, %s, %s, %s)'] * 5)}"
+                ),
+                params=(
+                    10, "1/1/2015", "<=24", "M", 6179, 1117,
+                    10, "2/1/2015", "<=24", "M", 6179, 4627,
+                    10, "1/1/2015", "25-34", "F", 6061, 10616,
+                    10, "1/2/2015", "25-34", "M", 6179, 8095,
+                    10, "1/2/2015", "35-44", "F", 6061, 6383,
+                ),
+            )
 
             yield service
 
@@ -55,8 +78,8 @@ class TestMapService:
 
         assert agg['<=24']['M'] == 0
         assert agg['<=24']['F'] == 0
-        assert agg['25-34']['F'] == 10
         assert agg['25-34']['M'] == 0
+        assert agg['25-34']['F'] == 10
         assert agg['35-44']['F'] == 10
         assert agg['35-44']['M'] == 0
 

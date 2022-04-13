@@ -3,15 +3,16 @@ import pytest
 from app import setup
 from config import settings
 from geoapp.db import database as db
+from geoapp.services import TDatabase
 
 
 @pytest.fixture(scope="session")
-def database():
+def database() -> TDatabase:
     try:
         settings.db_config.database = "test_database"
         setup(settings)
 
-        yield
+        yield db
 
     finally:
         db.teardown()

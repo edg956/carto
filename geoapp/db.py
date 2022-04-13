@@ -49,7 +49,7 @@ class Database(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def execute_statement(self, query: str) -> T.List:
+    def execute_statement(self, query: str, params: T.Tuple = None):
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -120,9 +120,9 @@ class PostgresDatabase(Database):
             cursor.execute(query, params)
             return cursor.fetchall()
 
-    def execute_statement(self, query: str) -> T.List:
+    def execute_statement(self, query: str, params: T.Tuple = None):
         with self._conn.cursor() as cursor:
-            cursor.execute(query)
+            cursor.execute(query, params)
 
     def _init_conn(self) -> PsycopgConnection:
         logger.info("Initializing to database")
