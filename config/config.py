@@ -18,7 +18,7 @@ class Config(BaseModel):
 
 def init_config(config_path: str = 'config/config.yml'):
     with open(config_path) as f:
-        data = yaml.load(f)
+        data = yaml.load(f, Loader=yaml.Loader)
 
     return Config(**data)
 

@@ -1,11 +1,11 @@
-CREATE TABLE IT NO EXISTS PostalCodes (
+CREATE TABLE IF NOT EXISTS PostalCodes (
     the_geom TEXT NOT NULL,
     code CHAR(5) NOT NULL,
     id INT NOT NULL,
     PRIMARY KEY (id)
 );
 
-CREATE TABLE IT NO EXISTS Payments (
+CREATE TABLE IF NOT EXISTS Payments (
     amount DECIMAL NOT NULL,
     p_month DATE NOT NULL,
     p_age VARCHAR(8) NOT NULL,

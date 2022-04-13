@@ -13,22 +13,19 @@ def date_range():
 
 class TestMapService:
     @pytest.fixture(scope="class")
-    def service():
-        db_config: DatabaseConfig = settings.db_config
-        db_config.database = "test_database"
+    def service(self, database):
+        service = services.PostgresQueryService()
 
-        service = services.PostgresQueryService(config=db_config)
-
-        cursor = service.conn.cursor()
-        cursor.execute("INSERT INTO PostalCodes")
+        service.db.set_autocommit(False)
 
         yield service
 
         service.conn.rollback()
 
-    @pytest.fixture
-    def date_range():
-        return date(2015, 1, 1), date(2015, 2, 31)
+
+    @pytest.fixture()
+    def date_range(self):
+        return date(2015, 1, 1), date(2015, 2, 28)
 
     def test_get_map_returns_one_postalcode(self, service, date_range):
         map_ = service.get_map(*date_range)
@@ -72,7 +69,7 @@ class TestMapService:
         assert turnover['results'] == 50
 
     def test_get_turnover_by_age_and_gender_returns_appropriate_results(self, service, date_range):
-        turnover = service.get_turnover_by_age_and_gender(*date_range, by=['age', 'gender'])
+        turnover = service.get_turnover_by_age_and_gender(*date_range)
 
         assert 'results' in turnover
         results = turnover['results']
@@ -85,7 +82,7 @@ class TestMapService:
         assert results['35-44']['M'] == 0
 
     def test_get_turnover_by_time_and_gender_returns_appropriate_results(self, service, date_range):
-        turnover = service.get_turnover_by_time_and_gender(*date_range, by=['time', 'gender'])
+        turnover = service.get_turnover_by_time_and_gender(*date_range)
 
         assert 'results' in turnover
         results = turnover['results']
