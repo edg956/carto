@@ -81,7 +81,6 @@ class Database(abc.ABC):
         raise NotImplementedError
 
 
-
 class PostgresDatabase(Database):
     def __init__(self, config: DatabaseConfig = None):
         self._conn: T.Optional[PsycopgConnection] = None
