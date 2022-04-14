@@ -11,3 +11,20 @@
 - The database integration could use a HUGE improvement. Namely, using an ORM would render most of the code related to connecting to the DB unnecessary.
 - Add support to override configuration defined in `config.yml` through environment variables
 - The mechanism to create a test database, inspired by django, could use an improvement.
+- The interface between the database and the services is a bit clunky. Especially since it's about returning aggregates from a database in JSON format. Would be good to have an abstraction that handled transformation from psycopg2's response to the application's logic
+- The docker image runs flask's own server, instead of using a WSGI server for it. That's no good for production.
+- Loading data into the database was one of the last things implemented and was done in a hurry. Not as nice as one would like.
+
+## How to run
+Get docker and docker-compose in your PC and run `docker-compose up` from the root of this repo. If, for whatever reason, docker-compose can't reach the precompiled image, run `docker-compose build` and then `docker-compose up`.
+
+Alternatively, with poetry install all dependencies and run it like this:
+
+```bash
+poetry shell
+poetry install
+
+flask run
+```
+
+Make sure you're running a postgres instance and that the configuration file matches the database configuration (`config/config.yml`). Hint: probably you'll have to change the host to `localhost`.

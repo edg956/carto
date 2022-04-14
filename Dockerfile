@@ -1,7 +1,7 @@
 #
 # API Base
 #
-FROM python:3.9-12-slim AS backend_base
+FROM python:3.9-slim AS backend_base
 RUN apt-get update
 RUN apt-get install -y curl
 ENV PYTHONUNBUFFERED=1 \

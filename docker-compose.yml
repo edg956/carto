@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   api:
-    image: carto/geoapp
+    image: eudg956/geoapp
     build:
       context: .
       target: backend
