@@ -7,7 +7,7 @@ from geoapp.handlers import query_blueprint, validation_error_handler
 
 
 def setup(config: Config = settings):
-    init(config.db_config)
+    init(config)
 
 
 app = Flask(__name__)

@@ -13,9 +13,15 @@ class DatabaseConfig(BaseModel):
     database_class: str
 
 
+class DataConfig(BaseModel):
+    payments: str
+    postalcodes: str
+
+
 class Config(BaseModel):
     db_config: DatabaseConfig
-
+    data: DataConfig
+    test: bool = False
 
 def init_config(config_path: str = 'config/config.yml'):
     with open(config_path) as f:

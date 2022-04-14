@@ -1,10 +1,11 @@
 import abc
+import csv
 import logging
 import typing as T
 
 import psycopg2
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT, ISOLATION_LEVEL_READ_COMMITTED
-from pydantic import BaseModel
+
 
 from config.config import Config, DatabaseConfig, settings
 
@@ -198,22 +199,53 @@ class PostgresDatabase(Database):
         conn.close()
 
 
-def init_tables(database: Database):
+def init_tables(db: Database, config: Config):
     logger.info("Loading SQL Script")
 
     with open('config/db.sql', 'r') as f:
         sql = f.read()
 
     logger.info("Initializing Database")
-    database.execute_statement(sql)
+    db.execute_statement(sql)
+
+    if config.test:
+        return
+
+    logger.info("Loading data")
+    with db.atomic():
+        res = db.execute_query("SELECT COUNT(*) FROM PostalCodes")
+        if not res[0][0]:
+            load_database(db, "PostalCodes", config.data.postalcodes)
+
+        res = db.execute_query("SELECT COUNT(*) FROM Payments")
+        if not res[0][0]:
+            load_database(db, "Payments", config.data.payments)
 
 
-def init(config: DatabaseConfig) -> Database:
+def init(config: Config) -> Database:
     global database
 
-    database.init(config)
+    if config.test:
+        config.db_config.database = f"test_{config.db_config.database}"
 
-    init_tables(database)
+    database.init(config.db_config)
+
+    init_tables(database, config)
+
+
+def load_database(db: Database, table_name: str, path: str):
+    db.execute_statement(f"COPY {table_name} FROM '{path}' csv header")
+
+
+def _csv_lines(path: str) -> T.Iterable:
+    with open(path) as f:
+        reader = csv.reader(f)
+
+        # Skip header
+        next(reader)
+
+        for row in reader:
+            yield row
 
 
 if settings.db_config.database_class not in locals():

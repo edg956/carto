@@ -21,19 +21,19 @@ def get_map() -> T.Tuple:
 @query_blueprint.route('/turnover', methods=('GET',))
 def get_turnover() -> T.Tuple:
     query: QueryRequestModel = QueryRequestModel.from_request(request)
-    return query_service.get_map(query.start_date, query.end_date), 200
+    return query_service.get_turnover(query.start_date, query.end_date), 200
 
 
 @query_blueprint.route('/turnover/age-gender', methods=('GET',))
 def get_turnover_by_age_and_gender() -> T.Tuple:
     query: QueryRequestModel = QueryRequestModel.from_request(request)
-    return query_service.get_map(query.start_date, query.end_date), 200
+    return query_service.get_turnover_by_age_and_gender(query.start_date, query.end_date), 200
 
 
-@query_blueprint.route('/turnover/age-gender', methods=('GET',))
+@query_blueprint.route('/turnover/time-gender', methods=('GET',))
 def get_turnover_by_time_and_gender() -> T.Tuple:
     query: QueryRequestModel = QueryRequestModel.from_request(request)
-    return query_service.get_map(query.start_date, query.end_date), 200
+    return query_service.get_turnover_by_time_and_gender(query.start_date, query.end_date), 200
 
 
 def validation_error_handler(ex):

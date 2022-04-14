@@ -4,3 +4,6 @@ db_config:
   database: carto
   user: carto
   password: password
+data:
+  payments: "/var/lib/postgresql/csv_imports/paystats.csv"
+  postalcodes: "/var/lib/postgresql/csv_imports/postal_codes.csv"

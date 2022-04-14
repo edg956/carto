@@ -9,7 +9,7 @@ from geoapp.services import TDatabase
 @pytest.fixture(scope="session")
 def database() -> TDatabase:
     try:
-        settings.db_config.database = "test_database"
+        settings.test = True
         setup(settings)
 
         yield db

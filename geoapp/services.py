@@ -155,9 +155,10 @@ def _get_aggregate_by_age_and_gender_dictionary() -> dict:
 
 def _get_aggregate_by_time_and_gender_dictionary(start_date: date, end_date: date) -> dict:
     base = {}
-    while start_date < end_date:
+    delta = relativedelta(months=1)
+    while start_date <= end_date:
         key = start_date.strftime('%Y-%m')
-        start_date += relativedelta(months=1)
+        start_date += delta
 
         base[key] = {}
 

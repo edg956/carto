@@ -7,7 +7,7 @@ services:
       context: .
       target: backend
     ports:
-      - 8000:8000
+      - "8000:8000"
     volumes:
       - ./:/app
     
@@ -19,9 +19,10 @@ services:
       POSTGRES_PASSWORD: password
       PGDATA: /var/lib/postgresql/data/PGDATA
     ports:
-      - 5432:5432
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./data:/var/lib/postgresql/csv_imports
 
 volumes:
   postgres_data:
