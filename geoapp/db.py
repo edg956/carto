@@ -5,7 +5,7 @@ import typing as T
 
 import psycopg2
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT, ISOLATION_LEVEL_READ_COMMITTED
-
+from tenacity import Retrying, wait_exponential, stop_after_attempt
 
 from config.config import Config, DatabaseConfig, settings
 
@@ -100,10 +100,18 @@ class PostgresDatabase(Database):
             self._conn.close()
 
         self.config = config
-        self._conn = self._init_conn()
+
+        for attempt in Retrying(
+                stop=stop_after_attempt(4),
+                wait=wait_exponential(),
+                reraise=True
+        ):
+            with attempt:
+                self._conn = self._init_conn()
 
     def atomic(self, effect: str = 'commit'):
         assert effect in ['commit', 'rollback'], f"Effect must be either `commit` or `rollback`. Got `{effect}`"
+
         class atomic:
             def __enter__(self_):
                 self_._old_state = self._conn.autocommit

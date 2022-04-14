@@ -1,0 +1,195 @@
+swagger: "2.0"
+info:
+  description: "This is a sample server for the BE challenge of CARTO"
+  version: "1.0.0"
+  title: "CARTO"
+host: "localhost:8000"
+basePath: "/api"
+tags:
+- name: "dashboard"
+  description: "Dashboard's endpoints"
+schemes:
+- "http"
+paths:
+  /map:
+    get:
+      tags:
+      - "dashboard"
+      summary: "Gets the map's data"
+      description: ""
+      operationId: "getMap"
+      consumes:
+      - "application/json"
+      - "application/xml"
+      produces:
+      - "application/xml"
+      - "application/json"
+      parameters:
+      - in: "query"
+        type: "string"
+        name: "startDate"
+        description: "The start date from which to return data"
+        required: true
+      - in: "query"
+        type: "string"
+        name: "endDate"
+        description: "The end date to which to return data"
+        required: true
+      responses:
+        "200":
+          description: "The map's data"
+          schema:
+            $ref: "#/definitions/Map"
+  /turnover:
+    get:
+      tags:
+      - "dashboard"
+      summary: "Gets the total turnover"
+      description: ""
+      operationId: "getTotalTurnover"
+      consumes:
+      - "application/json"
+      - "application/xml"
+      produces:
+      - "application/xml"
+      - "application/json"
+      parameters:
+      - in: "query"
+        type: "string"
+        name: "startDate"
+        description: "The start date from which to return data"
+        required: true
+      - in: "query"
+        type: "string"
+        name: "endDate"
+        description: "The end date to which to return data"
+        required: true
+      responses:
+        "200":
+          description: "The total turnover"
+          schema:
+            $ref: "#/definitions/Turnover"
+  /turnover/age-gender:
+    get:
+      tags:
+      - "dashboard"
+      summary: "Gets the turnover by dimensions"
+      description: ""
+      operationId: "getTurnoverByAgeAndGender"
+      consumes:
+      - "application/json"
+      - "application/xml"
+      produces:
+      - "application/xml"
+      - "application/json"
+      parameters:
+      - in: "query"
+        type: "string"
+        name: "startDate"
+        description: "The start date from which to return data"
+        required: true
+      - in: "query"
+        type: "string"
+        name: "endDate"
+        description: "The end date to which to return data"
+        required: true
+      responses:
+        "200":
+          description: "The total turnover"
+          schema:
+            $ref: "#/definitions/TurnoverByAgeAndGender"
+  /turnover/time-gender:
+    get:
+      tags:
+      - "dashboard"
+      summary: "Gets the turnover by dimensions"
+      description: ""
+      operationId: "getTurnoverByTimeAndGender"
+      consumes:
+      - "application/json"
+      - "application/xml"
+      produces:
+      - "application/xml"
+      - "application/json"
+      parameters:
+      - in: "query"
+        type: "string"
+        name: "startDate"
+        description: "The start date from which to return data"
+        required: true
+      - in: "query"
+        type: "string"
+        name: "endDate"
+        description: "The end date to which to return data"
+        required: true
+      responses:
+        "200":
+          description: "The total turnover"
+          schema:
+            $ref: "#/definitions/TurnoverByTimeAndGender"
+
+definitions:
+  Map:
+    type: "object"
+    properties:
+      results:
+        type: "object"
+        properties:
+          geometry:
+            type: "string"
+            description: "The geometry in WKB format"
+          aggregate:
+            type: "object"
+            properties:
+              age_category:
+                type: "object"
+                description: "Can actually take values like <=24, 25-34, etc"
+                properties:
+                  gender_category:
+                    description: "Can actually take values F or M"
+                    type: "number"
+                
+    xml:
+      name: "Map"
+  Turnover:
+    type: "object"
+    properties:
+      results:
+        type: "number"
+                
+    xml:
+      name: "Turnover"
+      
+  TurnoverByAgeAndGender:
+    type: "object"
+    properties:
+      results:
+        type: "object"
+        properties:
+          age_category:
+            type: "object"
+            description: "Can actually take values like <=24, 25-34, etc"
+            properties:
+              gender_category:
+                description: "Can actually take values F or M"
+                type: "number"
+                
+    xml:
+      name: "TurnoverByAgeAndGender"
+  
+  TurnoverByTimeAndGender:
+    type: "object"
+    properties:
+      results:
+        type: "object"
+        properties:
+          year_and_month:
+            type: "object"
+            description: "Can actually take values like 2015-01, 2015-02, etc"
+            properties:
+              gender_category:
+                description: "Can actually take values F or M"
+                type: "number"
+                
+    xml:
+      name: "TurnoverByAgeAndGender"

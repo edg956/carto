@@ -14,6 +14,8 @@
 - The interface between the database and the services is a bit clunky. Especially since it's about returning aggregates from a database in JSON format. Would be good to have an abstraction that handled transformation from psycopg2's response to the application's logic
 - The docker image runs flask's own server, instead of using a WSGI server for it. That's no good for production.
 - Loading data into the database was one of the last things implemented and was done in a hurry. Not as nice as one would like.
+- I started defining some dummy services that were going to be used for testing other parts of the logging in system, but did not get to that part.
+- There's not caching whatsoever. That would be nice.
 
 ## How to run
 Get docker and docker-compose in your PC and run `docker-compose up` from the root of this repo. If, for whatever reason, docker-compose can't reach the precompiled image, run `docker-compose build` and then `docker-compose up`.

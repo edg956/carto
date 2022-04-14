@@ -1,6 +1,6 @@
 db_config:
   database_class: PostgresDatabase
-  host: localhost
+  host: db
   database: carto
   user: carto
   password: password
