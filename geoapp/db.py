@@ -103,6 +103,7 @@ class PostgresDatabase(Database):
         self._conn = self._init_conn()
 
     def atomic(self, effect: str = 'commit'):
+        assert effect in ['commit', 'rollback'], f"Effect must be either `commit` or `rollback`. Got `{effect}`"
         class atomic:
             def __enter__(self_):
                 self_._old_state = self._conn.autocommit
@@ -110,19 +111,20 @@ class PostgresDatabase(Database):
 
             def __exit__(self_, *args, **kwargs):
                 self._set_autocommit(self_._old_state)
-                assert effect in ['commit', 'rollback'], f"Effect must be either `commit` or `rollback`. Got `{effect}`"
                 getattr(self._conn, effect)()
         
         return atomic()
 
     def execute_query(self, query: str, params: T.Tuple = None) -> T.List[T.Tuple]:
-        with self._conn.cursor() as cursor:
-            cursor.execute(query, params)
-            return cursor.fetchall()
+        with self._conn as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(query, params)
+                return cursor.fetchall()
 
     def execute_statement(self, query: str, params: T.Tuple = None):
-        with self._conn.cursor() as cursor:
-            cursor.execute(query, params)
+        with self._conn as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(query, params)
 
     def _init_conn(self) -> PsycopgConnection:
         logger.info("Initializing to database")
