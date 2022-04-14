@@ -1,9 +1,7 @@
 from datetime import date
 import pytest
-from config.config import DatabaseConfig
 
 from geoapp import services
-from config import settings
 
 
 @pytest.fixture
@@ -34,10 +32,10 @@ class TestMapService:
                 ),
                 params=(
                     10, "1/1/2015", "<=24", "M", 6179, 1117,
-                    10, "2/1/2015", "<=24", "M", 6179, 4627,
+                    10, "1/2/2015", "<=24", "M", 6179, 4627,
                     10, "1/1/2015", "25-34", "F", 6061, 10616,
-                    10, "1/2/2015", "25-34", "M", 6179, 8095,
-                    10, "1/2/2015", "35-44", "F", 6061, 6383,
+                    10, "2/1/2015", "25-34", "M", 6179, 8095,
+                    10, "2/1/2015", "35-44", "F", 6061, 6383,
                 ),
             )
 

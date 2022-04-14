@@ -1,6 +1,8 @@
 import abc
-from datetime import date
+from datetime import date, timedelta
 import typing as T
+
+from dateutil.relativedelta import relativedelta
 
 from geoapp import db
 from geoapp.models import Age, Gender
@@ -116,17 +118,17 @@ class PostgresQueryService(AbstractQueryService):
 
     def get_turnover_by_time_and_gender(self, start_date: date, end_date: date) -> dict:
         res = self.db.execute_query(
-            "SELECT TO_CHAR(p_month, yyyy-mm), p_gender, SUM(amount) "
+            "SELECT TO_CHAR(p_month, 'yyyy-mm'), p_gender, SUM(amount) "
             "FROM Payments "
             "WHERE p_month >= %s AND p_month <= %s "
-            "GROUP BY TO_CHAR(p_month, yyyy-mm), p_gender",
+            "GROUP BY TO_CHAR(p_month, 'yyyy-mm'), p_gender",
             (start_date, end_date)
         )
 
         data = _get_aggregate_by_time_and_gender_dictionary(start_date, end_date)
 
-        for age, gender, amount in res:
-            data[age][gender] += amount
+        for tm, gender, amount in res:
+            data[tm][gender] += amount
 
         return {
             "results": data
@@ -153,8 +155,13 @@ def _get_aggregate_by_age_and_gender_dictionary() -> dict:
 
 def _get_aggregate_by_time_and_gender_dictionary(start_date: date, end_date: date) -> dict:
     base = {}
-    for age in Age:
-        base[age] = {}
+    while start_date < end_date:
+        key = start_date.strftime('%Y-%m')
+        start_date += relativedelta(months=1)
+
+        base[key] = {}
+
         for gender in Gender:
-            base[age][gender] = 0
+            base[key][gender] = 0
+
     return base
